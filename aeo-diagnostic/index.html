@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AEO Diagnostic — AI Search Visibility Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080810;
+    --surface: #0f0f1a;
+    --border: #1e1e30;
+    --accent: #6366f1;
+    --accent2: #a78bfa;
+    --text: #e2e2f0;
+    --muted: #6b6b8a;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(99,102,241,0.1);
+    border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 12px;
+    color: var(--accent2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+
+  h1 span {
+    background: linear-gradient(135deg, #6366f1, #a78bfa, #38bdf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 1rem;
+    max-width: 500px;
+    margin: 0 auto;
+    line-height: 1.6;
+    font-weight: 400;
+  }
+
+  /* Form */
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 32px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+
+  input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+  }
+
+  input::placeholder { color: var(--muted); }
+
+  .examples {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .example-chip {
+    background: rgba(99,102,241,0.08);
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 100px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--accent2);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .example-chip:hover {
+    background: rgba(99,102,241,0.15);
+    border-color: var(--accent);
+  }
+
+  .btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent), #7c3aed);
+    border: none;
+    border-radius: 10px;
+    padding: 16px;
+    color: white;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(99,102,241,0.3);
+  }
+
+  .btn:active { transform: translateY(0); }
+
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Loading */
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 48px;
+  }
+
+  .loading.active { display: block; }
+
+  .spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 20px;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .loading-text {
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .loading-steps {
+    margin-top: 16px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .step.active { color: var(--accent2); }
+
+  /* Results */
+  .results { display: none; }
+  .results.active { display: block; }
+
+  /* Overall Score */
+  .score-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .score-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .score-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 16px;
+  }
+
+  .score-big {
+    font-size: 5rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .score-grade {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .score-bar {
+    height: 8px;
+    background: var(--border);
+    border-radius: 100px;
+    margin: 20px auto;
+    max-width: 400px;
+    overflow: hidden;
+  }
+
+  .score-fill {
+    height: 100%;
+    border-radius: 100px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 1s ease;
+  }
+
+  /* Model Cards */
+  .models-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 700px) {
+    .models-grid { grid-template-columns: 1fr; }
+  }
+
+  .model-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .model-card.found {
+    border-color: rgba(34,197,94,0.3);
+    background: rgba(34,197,94,0.03);
+  }
+
+  .model-card.not-found {
+    border-color: rgba(239,68,68,0.3);
+    background: rgba(239,68,68,0.03);
+  }
+
+  .model-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .model-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+
+  .model-emoji { font-size: 1.2rem; }
+
+  .model-score {
+    font-family: 'DM Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 500;
+  }
+
+  .model-rank {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 12px;
+  }
+
+  .model-response {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    max-height: 100px;
+    overflow-y: auto;
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .model-response::-webkit-scrollbar { width: 4px; }
+  .model-response::-webkit-scrollbar-track { background: transparent; }
+  .model-response::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Status badge */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+  }
+
+  .status-found {
+    background: rgba(34,197,94,0.1);
+    color: var(--green);
+    border: 1px solid rgba(34,197,94,0.2);
+  }
+
+  .status-not-found {
+    background: rgba(239,68,68,0.1);
+    color: var(--red);
+    border: 1px solid rgba(239,68,68,0.2);
+  }
+
+  /* Recommendations */
+  .rec-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .rec-title {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 16px;
+  }
+
+  .rec-item {
+    padding: 12px 16px;
+    background: var(--bg);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    border: 1px solid var(--border);
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 32px 0 16px;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .footer a {
+    color: var(--accent2);
+    text-decoration: none;
+  }
+
+  /* Error */
+  .error-msg {
+    display: none;
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 10px;
+    padding: 16px;
+    color: var(--red);
+    font-size: 0.9rem;
+    margin-top: 16px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .error-msg.active { display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="badge">AI Visibility Diagnostic</div>
+    <h1>How does AI rank<br><span>your product?</span></h1>
+    <p class="subtitle">See how GPT-4o, Claude, and Gemini recommend your product when customers search. Get your AI search report card instantly.</p>
+  </div>
+
+  <!-- Form -->
+  <div class="form-card">
+    <div class="form-grid">
+      <div class="field">
+        <label>Your Product Name</label>
+        <input type="text" id="product" placeholder="e.g. Nature's Bounty Magnesium" />
+      </div>
+      <div class="field">
+        <label>Customer Search Query</label>
+        <input type="text" id="query" placeholder="e.g. best magnesium for seniors" />
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="margin-bottom: 8px; display: block;">Try an example</label>
+      <div class="examples">
+        <div class="example-chip" onclick="setExample('Nature\'s Bounty Magnesium', 'best magnesium supplement for seniors')">Magnesium supplement</div>
+        <div class="example-chip" onclick="setExample('iPhone 15 Pro', 'best smartphone for photography')">iPhone 15 Pro</div>
+        <div class="example-chip" onclick="setExample('Kindle Paperwhite', 'best e-reader for reading at night')">Kindle Paperwhite</div>
+        <div class="example-chip" onclick="setExample('Instant Pot Duo', 'best pressure cooker for beginners')">Instant Pot</div>
+      </div>
+    </div>
+
+    <button class="btn" onclick="analyze()" id="analyzeBtn">
+      Run AI Visibility Diagnostic →
+    </button>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">Querying all 3 AI models simultaneously...</div>
+    <div class="loading-steps">
+      <div class="step active" id="step1">🤖 GPT-4o</div>
+      <div class="step active" id="step2">🧠 Claude</div>
+      <div class="step active" id="step3">✨ Gemini</div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+
+    <!-- Overall Score -->
+    <div class="score-card" id="scoreCard">
+      <div class="score-label">Overall AI Visibility Score</div>
+      <div class="score-big" id="overallScore">—</div>
+      <div class="score-grade" id="overallGrade">—</div>
+      <div class="score-bar">
+        <div class="score-fill" id="scoreFill" style="width: 0%"></div>
+      </div>
+      <div id="overallEmoji" style="font-size: 2rem; margin-top: 8px;"></div>
+    </div>
+
+    <!-- Model Cards -->
+    <div class="models-grid" id="modelsGrid"></div>
+
+    <!-- Recommendations -->
+    <div class="rec-card">
+      <div class="rec-title">Recommendations</div>
+      <div id="recommendations"></div>
+    </div>
+
+    <!-- Run Again -->
+    <button class="btn" onclick="reset()" style="margin-bottom: 32px;">
+      ← Run Another Diagnostic
+    </button>
+
+  </div>
+
+  <div class="footer">
+    Built with OpenRouter + Gemini API &nbsp;|&nbsp; 
+    <a href="https://github.com/rajaaryan779" target="_blank">github.com/rajaaryan779</a>
+  </div>
+
+</div>
+
+<script>
+  function setExample(product, query) {
+    document.getElementById('product').value = product;
+    document.getElementById('query').value = query;
+  }
+
+  async function analyze() {
+    const product = document.getElementById('product').value.trim();
+    const query = document.getElementById('query').value.trim();
+    const errorMsg = document.getElementById('errorMsg');
+
+    if (!product || !query) {
+      errorMsg.textContent = 'Please enter both your product name and a search query.';
+      errorMsg.classList.add('active');
+      return;
+    }
+
+    errorMsg.classList.remove('active');
+    document.getElementById('analyzeBtn').disabled = true;
+    document.getElementById('loading').classList.add('active');
+    document.getElementById('results').classList.remove('active');
+
+    try {
+      const response = await fetch('/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product, query })
+      });
+
+      if (!response.ok) throw new Error('API request failed');
+
+      const data = await response.json();
+      displayResults(data);
+
+    } catch (err) {
+      errorMsg.textContent = 'Error connecting to AI models. Please check your API keys and try again.';
+      errorMsg.classList.add('active');
+    } finally {
+      document.getElementById('loading').classList.remove('active');
+      document.getElementById('analyzeBtn').disabled = false;
+    }
+  }
+
+  function displayResults(data) {
+    // Overall score
+    document.getElementById('overallScore').textContent = data.overall_score + '/100';
+    document.getElementById('overallScore').style.color = data.overall_grade.color;
+    document.getElementById('overallGrade').textContent = data.overall_grade.grade + ' — ' + data.overall_grade.label;
+    document.getElementById('overallGrade').style.color = data.overall_grade.color;
+    document.getElementById('overallEmoji').textContent = data.overall_grade.emoji;
+
+    setTimeout(() => {
+      document.getElementById('scoreFill').style.width = data.overall_score + '%';
+    }, 100);
+
+    // Model cards
+    const modelsGrid = document.getElementById('modelsGrid');
+    modelsGrid.innerHTML = '';
+
+    Object.values(data.models).forEach(model => {
+      const card = document.createElement('div');
+      card.className = `model-card ${model.mentioned ? 'found' : 'not-found'}`;
+      card.innerHTML = `
+        <div class="model-header">
+          <div class="model-name">
+            <span class="model-emoji">${model.emoji}</span>
+            ${model.name}
+          </div>
+          <div class="model-score" style="color: ${model.grade.color}">${model.score}</div>
+        </div>
+        <div class="model-rank">
+          ${model.mentioned 
+            ? `<span class="status-badge status-found">✓ Found${model.rank ? ` — Rank #${model.rank}` : ''}</span>`
+            : `<span class="status-badge status-not-found">✗ Not Found</span>`
+          }
+        </div>
+        <div class="model-response">${model.response}</div>
+      `;
+      modelsGrid.appendChild(card);
+    });
+
+    // Recommendations
+    const recsDiv = document.getElementById('recommendations');
+    recsDiv.innerHTML = data.recommendations.map(rec =>
+      `<div class="rec-item">${rec}</div>`
+    ).join('');
+
+    document.getElementById('results').classList.add('active');
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function reset() {
+    document.getElementById('results').classList.remove('active');
+    document.getElementById('product').value = '';
+    document.getElementById('query').value = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
